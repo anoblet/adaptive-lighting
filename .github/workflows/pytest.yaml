@@ -6,49 +6,72 @@ on:
   pull_request:
 
 jobs:
-
   pytest:
     name: Run pytest
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.10"]
+        include:
+          - python-version: "3.11"
+            core-version: "2023.7.3"
+          - python-version: "3.11"
+            core-version: "2023.8.4"
+          - python-version: "3.11"
+            core-version: "2023.9.3"
+          - python-version: "3.11"
+            core-version: "2023.10.5"
+          - python-version: "3.11"
+            core-version: "2023.11.3"
+          - python-version: "3.11"
+            core-version: "2023.12.4"
+          - python-version: "3.11"
+            core-version: "2024.1.6"
+          - python-version: "3.11"
+            core-version: "2024.2.5"
+          - python-version: "3.12"
+            core-version: "2024.3.3"
+          - python-version: "3.12"
+            core-version: "2024.4.4"
+          - python-version: "3.12"
+            core-version: "2024.5.5"
+          - python-version: "3.12"
+            core-version: "2024.6.4"
+          - python-version: "3.12"
+            core-version: "2024.7.4"
+          - python-version: "3.12"
+            core-version: "2024.8.3"
+          - python-version: "3.12"
+            core-version: "2024.9.3"
+          - python-version: "3.12"
+            core-version: "2024.10.4"
+          - python-version: "3.12"
+            core-version: "2024.11.3"
+          - python-version: "3.12"
+            core-version: "2024.12.5"
+          - python-version: "3.12"
+            core-version: "2025.1.0b5"
+          - python-version: "3.13"
+            core-version: "dev"
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3.0.2
-      - name: Check out code from GitHub
-        uses: actions/checkout@v3.0.2
-        with:
-          repository: home-assistant/core
-          path: core
-      - name: Set up Python ${{ matrix.python-version }}
-        id: python
-        uses: actions/setup-python@v4.1.0
+        uses: actions/checkout@v4
+
+      - name: Install Home Assistant
+        uses: ./.github/workflows/install_dependencies
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          pip install -r core/requirements.txt
-          pip install -r core/requirements_test.txt
-          pip install -e core/
-          pip install $(python test_dependencies.py)
+          core-version: ${{ matrix.core-version }}
+
       - name: Run pytest
         timeout-minutes: 60
         run: |
+          export PYTHONPATH=${PYTHONPATH}:${PWD}
+          source .venv/bin/activate
           cd core
-
-          # Link homeassitant.components.adaptive_lighting
-          cd homeassistant/components
-          ln -fs ../../../custom_components/adaptive_lighting adaptive_lighting
-          cd -
-
-          # Link adaptive_lighting tests
-          cd tests/components/
-          ln -fs ../../../tests adaptive_lighting
-          cd -
-
           python3 -X dev -m pytest \
+            -vvv \
             -qq \
             --timeout=9 \
             --durations=10 \
